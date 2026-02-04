@@ -25,4 +25,15 @@ public class WalletController {
     public Wallet getWallet(@PathVariable Long userId) {
         return walletService.getWalletByUserId(userId);
     }
+
+    @PostMapping("/{userId}/deposit")
+    public Wallet deposit(@PathVariable Long userId, @RequestParam Double amount) {
+        return walletService.deposit(userId, amount);
+    }
+
+    @PostMapping("/{userId}/withdraw")
+    public Wallet withdraw(@PathVariable Long userId, @RequestParam Double amount) {
+        return walletService.withdraw(userId, amount);
+    }
+
 }

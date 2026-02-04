@@ -1,8 +1,7 @@
 package com.example.paymentsystems.entity;
 
 import jakarta.persistence.*;
-import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "transactions")
@@ -12,28 +11,27 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
     private Long userId;
 
-    @Column(nullable = false, precision = 19, scale = 4)
-    private BigDecimal amount;
+    private Double amount;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private TransactionType type;   // DEPOSIT, WITHDRAW
+    private TransactionType type;
 
-    @Column(nullable = false, updatable = false)
-    private Instant createdAt;
+    private LocalDateTime createdAt = LocalDateTime.now();
 
-    // JPA requires this
-    protected Transaction() {}
+    // ✅ VERY IMPORTANT: NO-ARGS CONSTRUCTOR (Spring needs this)
+    public Transaction() {}
 
-    public Transaction(Long userId, BigDecimal amount, TransactionType type) {
+    // Optional convenience constructor (not required)
+    public Transaction(Long userId, Double amount, TransactionType type) {
         this.userId = userId;
         this.amount = amount;
         this.type = type;
-        this.createdAt = Instant.now();
+        this.createdAt = LocalDateTime.now();
     }
+
+    // --------- GETTERS & SETTERS (YOU WERE MISSING THESE) ---------
 
     public Long getId() {
         return id;
@@ -43,15 +41,27 @@ public class Transaction {
         return userId;
     }
 
-    public BigDecimal getAmount() {
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public Double getAmount() {
         return amount;
+    }
+
+    public void setAmount(Double amount) {
+        this.amount = amount;
     }
 
     public TransactionType getType() {
         return type;
     }
 
-    public Instant getCreatedAt() {
+    public void setType(TransactionType type) {
+        this.type = type;
+    }
+
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 }
