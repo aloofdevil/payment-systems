@@ -8,6 +8,8 @@ import com.example.paymentsystems.repository.WalletRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class WalletService {
 
@@ -85,5 +87,10 @@ public class WalletService {
 
         return wallet;
     }
+    public List<Transaction> getTransactionsByUser(Long userId) {
+        return transactionRepository.findByUserId(userId);
+    }
+
+
 
 }
