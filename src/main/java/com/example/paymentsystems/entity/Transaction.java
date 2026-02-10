@@ -1,6 +1,8 @@
 package com.example.paymentsystems.entity;
 
 import jakarta.persistence.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -13,25 +15,27 @@ public class Transaction {
 
     private Long userId;
 
-    private Double amount;
+    private BigDecimal amount;   // ✅ Changed from Double to BigDecimal
 
     @Enumerated(EnumType.STRING)
     private TransactionType type;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
 
-    // ✅ VERY IMPORTANT: NO-ARGS CONSTRUCTOR (Spring needs this)
-    public Transaction() {}
+    // ✅ No-args constructor (required by JPA)
+    public Transaction() {
+        this.createdAt = LocalDateTime.now();
+    }
 
-    // Optional convenience constructor (not required)
-    public Transaction(Long userId, Double amount, TransactionType type) {
+    // ✅ Convenience constructor
+    public Transaction(Long userId, BigDecimal amount, TransactionType type) {
         this.userId = userId;
         this.amount = amount;
         this.type = type;
         this.createdAt = LocalDateTime.now();
     }
 
-    // --------- GETTERS & SETTERS (YOU WERE MISSING THESE) ---------
+    // ---------------- GETTERS & SETTERS ----------------
 
     public Long getId() {
         return id;
@@ -45,11 +49,11 @@ public class Transaction {
         this.userId = userId;
     }
 
-    public Double getAmount() {
+    public BigDecimal getAmount() {
         return amount;
     }
 
-    public void setAmount(Double amount) {
+    public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
 

@@ -1,6 +1,7 @@
 package com.example.paymentsystems.entity;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "wallets")
@@ -10,19 +11,18 @@ public class Wallet {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
     private Long userId;
 
-    private Double balance = 0.0;
+    // ✅ MUST BE BigDecimal (NOT Double)
+    private BigDecimal balance = BigDecimal.ZERO;
 
     public Wallet() {}
 
     public Wallet(Long userId) {
         this.userId = userId;
-        this.balance = 0.0;
+        this.balance = BigDecimal.ZERO;
     }
 
-    // getters & setters
     public Long getId() {
         return id;
     }
@@ -31,11 +31,15 @@ public class Wallet {
         return userId;
     }
 
-    public Double getBalance() {
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public BigDecimal getBalance() {
         return balance;
     }
 
-    public void setBalance(Double balance) {
+    public void setBalance(BigDecimal balance) {
         this.balance = balance;
     }
 }
