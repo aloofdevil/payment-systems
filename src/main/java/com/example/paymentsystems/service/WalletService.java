@@ -1,5 +1,6 @@
 package com.example.paymentsystems.service;
 
+import com.example.paymentsystems.dto.WalletSummaryResponse;
 import com.example.paymentsystems.entity.Transaction;
 import com.example.paymentsystems.entity.TransactionType;
 import com.example.paymentsystems.entity.Wallet;
@@ -141,4 +142,35 @@ public class WalletService {
     public List<Transaction> getTransactionsByUser(Long userId) {
         return transactionRepository.findByUserId(userId);
     }
+    public WalletSummaryResponse getWalletSummary(Long userId) {
+
+        Wallet wallet = walletRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+
+        List<Transaction> transactions = transactionRepository.findByUserId(userId);
+
+        BigDecimal totalDeposits = BigDecimal.ZERO;
+        BigDecimal totalWithdrawals = BigDecimal.ZERO;
+        BigDecimal totalTransfersIn = BigDecimal.ZERO;
+        BigDecimal totalTransfersOut = BigDecimal.ZERO;
+
+        for (Transaction txn : transactions) {
+            switch (txn.getType()) {
+                case DEPOSIT -> totalDeposits = totalDeposits.add(txn.getAmount());
+                case WITHDRAW -> totalWithdrawals = totalWithdrawals.add(txn.getAmount());
+                case TRANSFER_IN -> totalTransfersIn = totalTransfersIn.add(txn.getAmount());
+                case TRANSFER_OUT -> totalTransfersOut = totalTransfersOut.add(txn.getAmount());
+            }
+        }
+
+        return new WalletSummaryResponse(
+                userId,
+                wallet.getBalance(),
+                totalDeposits,
+                totalWithdrawals,
+                totalTransfersIn,
+                totalTransfersOut
+        );
+    }
+
 }

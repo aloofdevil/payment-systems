@@ -1,6 +1,7 @@
 package com.example.paymentsystems.controller;
 
 import com.example.paymentsystems.dto.ApiResponse;
+import com.example.paymentsystems.dto.TransferRequest;
 import com.example.paymentsystems.entity.Transaction;
 import com.example.paymentsystems.entity.Wallet;
 import com.example.paymentsystems.service.WalletService;
@@ -37,17 +38,23 @@ public class TransactionController {
         return new ApiResponse(true, "Withdrawal successful", wallet);
     }
 
-    @PostMapping("/{fromUser}/transfer/{toUser}")
-    public ApiResponse transfer(
-            @PathVariable Long fromUser,
-            @PathVariable Long toUser,
-            @RequestParam Double amount) {
+    @PostMapping("/transfer")
+    public ApiResponse transfer(@RequestBody TransferRequest request) {
 
-        walletService.transfer(fromUser, toUser, amount);
+        walletService.transfer(
+                request.getFromUser(),
+                request.getToUser(),
+                request.getAmount()
+        );
+
         return new ApiResponse(true,
-                "Transfer successful from " + fromUser + " to " + toUser,
+                "Transfer successful from " +
+                        request.getFromUser() +
+                        " to " +
+                        request.getToUser(),
                 null);
     }
+
 
     @GetMapping("/user/{userId}")
     public ApiResponse getTransactions(@PathVariable Long userId) {

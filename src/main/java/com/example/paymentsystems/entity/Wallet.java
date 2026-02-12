@@ -12,6 +12,12 @@ public class Wallet {
     private Long id;
 
     private Long userId;
+    @Version
+    @Column(nullable = false)
+    private Long version;
+
+
+
 
     // ✅ MUST BE BigDecimal (NOT Double)
     private BigDecimal balance = BigDecimal.ZERO;

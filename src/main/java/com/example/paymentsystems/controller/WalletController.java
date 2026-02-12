@@ -1,5 +1,6 @@
 package com.example.paymentsystems.controller;
 
+import com.example.paymentsystems.dto.ApiResponse;
 import com.example.paymentsystems.entity.Wallet;
 import com.example.paymentsystems.service.WalletService;
 import org.springframework.web.bind.annotation.*;
@@ -25,5 +26,14 @@ public class WalletController {
     public Wallet getWallet(@PathVariable Long userId) {
         return walletService.getWalletByUserId(userId);
     }
+    @GetMapping("/{userId}/summary")
+    public ApiResponse getSummary(@PathVariable Long userId) {
+        return new ApiResponse(
+                true,
+                "Wallet summary fetched",
+                walletService.getWalletSummary(userId)
+        );
+    }
+
 }
 
