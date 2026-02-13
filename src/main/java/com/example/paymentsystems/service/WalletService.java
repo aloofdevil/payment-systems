@@ -24,7 +24,7 @@ public class WalletService {
         this.transactionRepository = transactionRepository;
     }
 
-    // ✅ CREATE WALLET (if not exists)
+    // ✅ CREATE WALLET
     public Wallet createWallet(Long userId) {
         return walletRepository.findByUserId(userId)
                 .orElseGet(() -> walletRepository.save(new Wallet(userId)));
@@ -44,20 +44,15 @@ public class WalletService {
             throw new RuntimeException("Deposit amount must be greater than zero");
         }
 
-        Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+        Wallet wallet = getWalletByUserId(userId);
 
         BigDecimal depositAmount = BigDecimal.valueOf(amount);
 
-        // Update balance
         wallet.setBalance(wallet.getBalance().add(depositAmount));
         walletRepository.save(wallet);
 
-        // Save transaction
-        Transaction txn = new Transaction();
-        txn.setUserId(userId);
-        txn.setAmount(depositAmount);
-        txn.setType(TransactionType.DEPOSIT);
+        // ✅ Using constructor (Solution 2)
+        Transaction txn = new Transaction(userId, depositAmount, TransactionType.DEPOSIT);
         transactionRepository.save(txn);
 
         return wallet;
@@ -71,8 +66,7 @@ public class WalletService {
             throw new RuntimeException("Withdraw amount must be greater than zero");
         }
 
-        Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+        Wallet wallet = getWalletByUserId(userId);
 
         BigDecimal withdrawAmount = BigDecimal.valueOf(amount);
 
@@ -83,11 +77,7 @@ public class WalletService {
         wallet.setBalance(wallet.getBalance().subtract(withdrawAmount));
         walletRepository.save(wallet);
 
-        // Save transaction
-        Transaction txn = new Transaction();
-        txn.setUserId(userId);
-        txn.setAmount(withdrawAmount);
-        txn.setType(TransactionType.WITHDRAW);
+        Transaction txn = new Transaction(userId, withdrawAmount, TransactionType.WITHDRAW);
         transactionRepository.save(txn);
 
         return wallet;
@@ -101,11 +91,8 @@ public class WalletService {
             throw new RuntimeException("Transfer amount must be greater than zero");
         }
 
-        Wallet sender = walletRepository.findByUserId(fromUser)
-                .orElseThrow(() -> new RuntimeException("Sender wallet not found"));
-
-        Wallet receiver = walletRepository.findByUserId(toUser)
-                .orElseThrow(() -> new RuntimeException("Receiver wallet not found"));
+        Wallet sender = getWalletByUserId(fromUser);
+        Wallet receiver = getWalletByUserId(toUser);
 
         BigDecimal transferAmount = BigDecimal.valueOf(amount);
 
@@ -113,40 +100,36 @@ public class WalletService {
             throw new RuntimeException("Insufficient balance");
         }
 
-        // Deduct from sender
+        // Deduct sender
         sender.setBalance(sender.getBalance().subtract(transferAmount));
         walletRepository.save(sender);
 
-        // Add to receiver
+        // Add receiver
         receiver.setBalance(receiver.getBalance().add(transferAmount));
         walletRepository.save(receiver);
 
-        // Save sender transaction (WITHDRAW)
-        Transaction debitTxn = new Transaction();
-        debitTxn.setUserId(fromUser);
-        debitTxn.setAmount(transferAmount);
-        debitTxn.setType(TransactionType.WITHDRAW);
-        transactionRepository.save(debitTxn);
+        // ✅ Proper transaction types
+        Transaction debitTxn =
+                new Transaction(fromUser, transferAmount, TransactionType.TRANSFER_OUT);
 
-        // Save receiver transaction (DEPOSIT)
-        Transaction creditTxn = new Transaction();
-        creditTxn.setUserId(toUser);
-        creditTxn.setAmount(transferAmount);
-        creditTxn.setType(TransactionType.DEPOSIT);
+        Transaction creditTxn =
+                new Transaction(toUser, transferAmount, TransactionType.TRANSFER_IN);
+
+        transactionRepository.save(debitTxn);
         transactionRepository.save(creditTxn);
 
         return sender;
     }
 
-    // ✅ GET TRANSACTIONS FOR A USER
+    // ✅ GET TRANSACTIONS
     public List<Transaction> getTransactionsByUser(Long userId) {
         return transactionRepository.findByUserId(userId);
     }
+
+    // ✅ WALLET SUMMARY
     public WalletSummaryResponse getWalletSummary(Long userId) {
 
-        Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
-
+        Wallet wallet = getWalletByUserId(userId);
         List<Transaction> transactions = transactionRepository.findByUserId(userId);
 
         BigDecimal totalDeposits = BigDecimal.ZERO;
@@ -172,5 +155,4 @@ public class WalletService {
                 totalTransfersOut
         );
     }
-
 }

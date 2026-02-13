@@ -6,36 +6,49 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "transactions")
+@Table(
+        name = "transactions",
+        indexes = {
+                @Index(name = "idx_user_id", columnList = "userId")
+        }
+)
 public class Transaction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private Long userId;
 
-    private BigDecimal amount;   // ✅ Changed from Double to BigDecimal
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private TransactionType type;
 
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // ✅ No-args constructor (required by JPA)
-    public Transaction() {
-        this.createdAt = LocalDateTime.now();
+    // ✅ Required by JPA
+    protected Transaction() {
     }
 
-    // ✅ Convenience constructor
+    // ✅ Business constructor
     public Transaction(Long userId, BigDecimal amount, TransactionType type) {
         this.userId = userId;
         this.amount = amount;
         this.type = type;
+    }
+
+    // ✅ Automatically set timestamp before insert
+    @PrePersist
+    protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
 
-    // ---------------- GETTERS & SETTERS ----------------
+    // ---------------- GETTERS ----------------
 
     public Long getId() {
         return id;
@@ -45,27 +58,29 @@ public class Transaction {
         return userId;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
     public BigDecimal getAmount() {
         return amount;
-    }
-
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
     }
 
     public TransactionType getType() {
         return type;
     }
 
-    public void setType(TransactionType type) {
-        this.type = type;
-    }
-
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    // ---------------- SETTERS ----------------
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public void setType(TransactionType type) {
+        this.type = type;
     }
 }
