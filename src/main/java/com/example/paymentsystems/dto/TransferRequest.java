@@ -1,10 +1,23 @@
 package com.example.paymentsystems.dto;
 
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
+
+import java.math.BigDecimal;
+
 public class TransferRequest {
 
+    @NotNull(message = "From user is required")
     private Long fromUser;
+
+    @NotNull(message = "To user is required")
     private Long toUser;
-    private Double amount;
+
+    @NotNull(message = "Amount is required")
+    @DecimalMin(value = "0.01", message = "Amount must be greater than 0")
+    private BigDecimal amount;
+
+    // ✅ GETTERS & SETTERS
 
     public Long getFromUser() {
         return fromUser;
@@ -22,11 +35,11 @@ public class TransferRequest {
         this.toUser = toUser;
     }
 
-    public Double getAmount() {
+    public BigDecimal getAmount() {   // ✅ FIXED
         return amount;
     }
 
-    public void setAmount(Double amount) {
+    public void setAmount(BigDecimal amount) {   // ✅ FIXED
         this.amount = amount;
     }
 }

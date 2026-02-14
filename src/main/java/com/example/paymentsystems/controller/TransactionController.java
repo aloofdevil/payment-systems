@@ -2,12 +2,12 @@ package com.example.paymentsystems.controller;
 
 import com.example.paymentsystems.dto.ApiResponse;
 import com.example.paymentsystems.dto.TransferRequest;
-import com.example.paymentsystems.entity.Transaction;
 import com.example.paymentsystems.entity.Wallet;
 import com.example.paymentsystems.service.WalletService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/transactions")
@@ -23,46 +23,43 @@ public class TransactionController {
     @PostMapping("/{userId}/deposit")
     public ApiResponse deposit(
             @PathVariable Long userId,
-            @RequestParam Double amount) {
+            @RequestParam BigDecimal amount) {   // ✅ FIXED
 
         Wallet wallet = walletService.deposit(userId, amount);
         return new ApiResponse(true, "Deposit successful", wallet);
     }
 
+    // ✅ WITHDRAW
     @PostMapping("/{userId}/withdraw")
     public ApiResponse withdraw(
             @PathVariable Long userId,
-            @RequestParam Double amount) {
+            @RequestParam BigDecimal amount) {   // ✅ FIXED
 
         Wallet wallet = walletService.withdraw(userId, amount);
         return new ApiResponse(true, "Withdrawal successful", wallet);
     }
 
+    // ✅ TRANSFER
     @PostMapping("/transfer")
-    public ApiResponse transfer(@RequestBody TransferRequest request) {
+    public ApiResponse transfer(@Valid @RequestBody TransferRequest request) {
 
         walletService.transfer(
                 request.getFromUser(),
                 request.getToUser(),
-                request.getAmount()
+                request.getAmount()   // now BigDecimal
         );
 
-        return new ApiResponse(true,
-                "Transfer successful from " +
-                        request.getFromUser() +
-                        " to " +
-                        request.getToUser(),
-                null);
+        return new ApiResponse(true, "Transfer successful", null);
     }
 
-
+    // ✅ GET USER TRANSACTIONS
     @GetMapping("/user/{userId}")
     public ApiResponse getTransactions(@PathVariable Long userId) {
-        return new ApiResponse(true,
+
+        return new ApiResponse(
+                true,
                 "Transactions fetched",
-                walletService.getTransactionsByUser(userId));
+                walletService.getTransactionsByUser(userId)
+        );
     }
-
-
-
 }
