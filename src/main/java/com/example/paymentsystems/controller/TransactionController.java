@@ -56,13 +56,13 @@ public class TransactionController {
         walletService.transfer(
                 request.getFromUser(),
                 request.getToUser(),
-                request.getAmount()
+                request.getAmount(),
+                request.getIdempotencyKey()
         );
 
         return new ApiResponse(true, "Transfer successful", null);
     }
 
-    // ==============================
     // GET TRANSACTIONS
     // ==============================
     @GetMapping("/user/{userId}")

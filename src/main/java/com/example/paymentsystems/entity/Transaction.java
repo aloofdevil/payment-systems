@@ -31,56 +31,43 @@ public class Transaction {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // ✅ Required by JPA
-    protected Transaction() {
-    }
+    // NEW FIELD
+    @Column(unique = true)
+    private String idempotencyKey;
 
-    // ✅ Business constructor
+    protected Transaction() {}
+
     public Transaction(Long userId, BigDecimal amount, TransactionType type) {
         this.userId = userId;
         this.amount = amount;
         this.type = type;
     }
 
-    // ✅ Automatically set timestamp before insert
+    public Transaction(Long userId, BigDecimal amount, TransactionType type, String key) {
+        this.userId = userId;
+        this.amount = amount;
+        this.type = type;
+        this.idempotencyKey = key;
+    }
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
 
-    // ---------------- GETTERS ----------------
+    public Long getId() { return id; }
 
-    public Long getId() {
-        return id;
-    }
+    public Long getUserId() { return userId; }
 
-    public Long getUserId() {
-        return userId;
-    }
+    public BigDecimal getAmount() { return amount; }
 
-    public BigDecimal getAmount() {
-        return amount;
-    }
+    public TransactionType getType() { return type; }
 
-    public TransactionType getType() {
-        return type;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public String getIdempotencyKey() { return idempotencyKey; }
 
-    // ---------------- SETTERS ----------------
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
-
-    public void setType(TransactionType type) {
-        this.type = type;
+    public void setIdempotencyKey(String idempotencyKey) {
+        this.idempotencyKey = idempotencyKey;
     }
 }

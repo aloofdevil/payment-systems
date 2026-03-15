@@ -6,12 +6,14 @@ import com.example.paymentsystems.entity.TransactionType;
 import com.example.paymentsystems.entity.Wallet;
 import com.example.paymentsystems.repository.TransactionRepository;
 import com.example.paymentsystems.repository.WalletRepository;
+
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class WalletService {
@@ -27,25 +29,16 @@ public class WalletService {
         this.transactionRepository = transactionRepository;
     }
 
-    // =============================
-    // CREATE WALLET
-    // =============================
     public Wallet createWallet(Long userId) {
         return walletRepository.findByUserId(userId)
                 .orElseGet(() -> walletRepository.save(new Wallet(userId)));
     }
 
-    // =============================
-    // GET WALLET WITH LOCK
-    // =============================
     public Wallet getWalletByUserId(Long userId) {
         return walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
     }
 
-    // =============================
-    // DEPOSIT
-    // =============================
     @Transactional
     public Wallet deposit(Long userId, BigDecimal amount) {
 
@@ -62,9 +55,6 @@ public class WalletService {
         return wallet;
     }
 
-    // =============================
-    // WITHDRAW
-    // =============================
     @Transactional
     public Wallet withdraw(Long userId, BigDecimal amount) {
 
@@ -85,16 +75,20 @@ public class WalletService {
         return wallet;
     }
 
-    // =============================
-    // TRANSFER
-    // =============================
     @Transactional
-    public void transfer(Long fromUser, Long toUser, BigDecimal amount) {
+    public void transfer(Long fromUser, Long toUser, BigDecimal amount, String key) {
 
         validateAmount(amount);
 
         if (fromUser.equals(toUser)) {
             throw new RuntimeException("Cannot transfer to the same account");
+        }
+
+        Optional<Transaction> existing =
+                transactionRepository.findByIdempotencyKey(key);
+
+        if (existing.isPresent()) {
+            return;
         }
 
         Wallet sender = walletRepository.findByUserId(fromUser)
@@ -111,7 +105,7 @@ public class WalletService {
         receiver.setBalance(receiver.getBalance().add(amount));
 
         transactionRepository.save(
-                new Transaction(fromUser, amount, TransactionType.TRANSFER_OUT)
+                new Transaction(fromUser, amount, TransactionType.TRANSFER_OUT, key)
         );
 
         transactionRepository.save(
@@ -119,9 +113,6 @@ public class WalletService {
         );
     }
 
-    // =============================
-    // TRANSACTION HISTORY
-    // =============================
     public Page<Transaction> getTransactionsByUser(
             Long userId,
             int page,
@@ -137,9 +128,6 @@ public class WalletService {
         return transactionRepository.findByUserId(userId, pageable);
     }
 
-    // =============================
-    // WALLET SUMMARY
-    // =============================
     public WalletSummaryResponse getWalletSummary(Long userId) {
 
         Wallet wallet = getWalletByUserId(userId);
@@ -181,9 +169,6 @@ public class WalletService {
         );
     }
 
-    // =============================
-    // HELPER
-    // =============================
     private void validateAmount(BigDecimal amount) {
 
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
