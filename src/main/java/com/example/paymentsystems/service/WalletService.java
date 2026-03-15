@@ -19,31 +19,33 @@ public class WalletService {
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
 
-    public WalletService(WalletRepository walletRepository,
-                         TransactionRepository transactionRepository) {
+    public WalletService(
+            WalletRepository walletRepository,
+            TransactionRepository transactionRepository
+    ) {
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
     }
 
-    // ==============================
-    // ✅ CREATE WALLET
-    // ==============================
+    // =============================
+    // CREATE WALLET
+    // =============================
     public Wallet createWallet(Long userId) {
         return walletRepository.findByUserId(userId)
                 .orElseGet(() -> walletRepository.save(new Wallet(userId)));
     }
 
-    // ==============================
-    // ✅ GET WALLET
-    // ==============================
+    // =============================
+    // GET WALLET WITH LOCK
+    // =============================
     public Wallet getWalletByUserId(Long userId) {
         return walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
     }
 
-    // ==============================
-    // ✅ DEPOSIT
-    // ==============================
+    // =============================
+    // DEPOSIT
+    // =============================
     @Transactional
     public Wallet deposit(Long userId, BigDecimal amount) {
 
@@ -52,19 +54,17 @@ public class WalletService {
         Wallet wallet = getWalletByUserId(userId);
 
         wallet.setBalance(wallet.getBalance().add(amount));
-        walletRepository.save(wallet);
 
-        Transaction txn =
-                new Transaction(userId, amount, TransactionType.DEPOSIT);
-
-        transactionRepository.save(txn);
+        transactionRepository.save(
+                new Transaction(userId, amount, TransactionType.DEPOSIT)
+        );
 
         return wallet;
     }
 
-    // ==============================
-    // ✅ WITHDRAW
-    // ==============================
+    // =============================
+    // WITHDRAW
+    // =============================
     @Transactional
     public Wallet withdraw(Long userId, BigDecimal amount) {
 
@@ -77,55 +77,51 @@ public class WalletService {
         }
 
         wallet.setBalance(wallet.getBalance().subtract(amount));
-        walletRepository.save(wallet);
 
-        Transaction txn =
-                new Transaction(userId, amount, TransactionType.WITHDRAW);
-
-        transactionRepository.save(txn);
+        transactionRepository.save(
+                new Transaction(userId, amount, TransactionType.WITHDRAW)
+        );
 
         return wallet;
     }
 
-    // ==============================
-    // ✅ TRANSFER
-    // ==============================
+    // =============================
+    // TRANSFER
+    // =============================
     @Transactional
-    public Wallet transfer(Long fromUser, Long toUser, BigDecimal amount) {
+    public void transfer(Long fromUser, Long toUser, BigDecimal amount) {
 
         validateAmount(amount);
 
-        Wallet sender = getWalletByUserId(fromUser);
-        Wallet receiver = getWalletByUserId(toUser);
+        if (fromUser.equals(toUser)) {
+            throw new RuntimeException("Cannot transfer to the same account");
+        }
+
+        Wallet sender = walletRepository.findByUserId(fromUser)
+                .orElseThrow(() -> new RuntimeException("Sender wallet not found"));
+
+        Wallet receiver = walletRepository.findByUserId(toUser)
+                .orElseThrow(() -> new RuntimeException("Receiver wallet not found"));
 
         if (sender.getBalance().compareTo(amount) < 0) {
             throw new RuntimeException("Insufficient balance");
         }
 
-        // Deduct from sender
         sender.setBalance(sender.getBalance().subtract(amount));
-        walletRepository.save(sender);
-
-        // Credit receiver
         receiver.setBalance(receiver.getBalance().add(amount));
-        walletRepository.save(receiver);
 
-        // Record transactions
-        Transaction debitTxn =
-                new Transaction(fromUser, amount, TransactionType.TRANSFER_OUT);
+        transactionRepository.save(
+                new Transaction(fromUser, amount, TransactionType.TRANSFER_OUT)
+        );
 
-        Transaction creditTxn =
-                new Transaction(toUser, amount, TransactionType.TRANSFER_IN);
-
-        transactionRepository.save(debitTxn);
-        transactionRepository.save(creditTxn);
-
-        return sender;
+        transactionRepository.save(
+                new Transaction(toUser, amount, TransactionType.TRANSFER_IN)
+        );
     }
 
-    // ==============================
-    // ✅ GET TRANSACTIONS (Pagination)
-    // ==============================
+    // =============================
+    // TRANSACTION HISTORY
+    // =============================
     public Page<Transaction> getTransactionsByUser(
             Long userId,
             int page,
@@ -141,9 +137,9 @@ public class WalletService {
         return transactionRepository.findByUserId(userId, pageable);
     }
 
-    // ==============================
-    // ✅ WALLET SUMMARY
-    // ==============================
+    // =============================
+    // WALLET SUMMARY
+    // =============================
     public WalletSummaryResponse getWalletSummary(Long userId) {
 
         Wallet wallet = getWalletByUserId(userId);
@@ -152,45 +148,46 @@ public class WalletService {
                 transactionRepository.findByUserId(userId, Pageable.unpaged())
                         .getContent();
 
-        BigDecimal totalDeposits = BigDecimal.ZERO;
-        BigDecimal totalWithdrawals = BigDecimal.ZERO;
-        BigDecimal totalTransfersIn = BigDecimal.ZERO;
-        BigDecimal totalTransfersOut = BigDecimal.ZERO;
+        BigDecimal deposits = BigDecimal.ZERO;
+        BigDecimal withdrawals = BigDecimal.ZERO;
+        BigDecimal transfersIn = BigDecimal.ZERO;
+        BigDecimal transfersOut = BigDecimal.ZERO;
 
         for (Transaction txn : transactions) {
 
             switch (txn.getType()) {
+
                 case DEPOSIT ->
-                        totalDeposits = totalDeposits.add(txn.getAmount());
+                        deposits = deposits.add(txn.getAmount());
 
                 case WITHDRAW ->
-                        totalWithdrawals = totalWithdrawals.add(txn.getAmount());
+                        withdrawals = withdrawals.add(txn.getAmount());
 
                 case TRANSFER_IN ->
-                        totalTransfersIn = totalTransfersIn.add(txn.getAmount());
+                        transfersIn = transfersIn.add(txn.getAmount());
 
                 case TRANSFER_OUT ->
-                        totalTransfersOut = totalTransfersOut.add(txn.getAmount());
+                        transfersOut = transfersOut.add(txn.getAmount());
             }
         }
 
         return new WalletSummaryResponse(
                 userId,
                 wallet.getBalance(),
-                totalDeposits,
-                totalWithdrawals,
-                totalTransfersIn,
-                totalTransfersOut
+                deposits,
+                withdrawals,
+                transfersIn,
+                transfersOut
         );
     }
 
-    // ==============================
-    // 🔒 PRIVATE HELPER
-    // ==============================
+    // =============================
+    // HELPER
+    // =============================
     private void validateAmount(BigDecimal amount) {
+
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("Amount must be greater than zero");
         }
     }
 }
-

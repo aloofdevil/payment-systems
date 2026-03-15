@@ -17,7 +17,8 @@ public class TransferRequest {
     @DecimalMin(value = "0.01", message = "Amount must be greater than 0")
     private BigDecimal amount;
 
-    // ✅ GETTERS & SETTERS
+    @NotNull(message = "Idempotency key is required")
+    private String idempotencyKey;
 
     public Long getFromUser() {
         return fromUser;
@@ -35,11 +36,19 @@ public class TransferRequest {
         this.toUser = toUser;
     }
 
-    public BigDecimal getAmount() {   // ✅ FIXED
+    public BigDecimal getAmount() {
         return amount;
     }
 
-    public void setAmount(BigDecimal amount) {   // ✅ FIXED
+    public void setAmount(BigDecimal amount) {
         this.amount = amount;
+    }
+
+    public String getIdempotencyKey() {
+        return idempotencyKey;
+    }
+
+    public void setIdempotencyKey(String idempotencyKey) {
+        this.idempotencyKey = idempotencyKey;
     }
 }

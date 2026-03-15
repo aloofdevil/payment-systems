@@ -2,6 +2,7 @@ package com.example.paymentsystems.controller;
 
 import com.example.paymentsystems.dto.ApiResponse;
 import com.example.paymentsystems.dto.TransferRequest;
+import com.example.paymentsystems.entity.Transaction;
 import com.example.paymentsystems.entity.Wallet;
 import com.example.paymentsystems.service.WalletService;
 import jakarta.validation.Valid;
@@ -21,7 +22,7 @@ public class TransactionController {
     }
 
     // ==============================
-    // ✅ DEPOSIT
+    // DEPOSIT
     // ==============================
     @PostMapping("/{userId}/deposit")
     public ApiResponse deposit(
@@ -34,7 +35,7 @@ public class TransactionController {
     }
 
     // ==============================
-    // ✅ WITHDRAW
+    // WITHDRAW
     // ==============================
     @PostMapping("/{userId}/withdraw")
     public ApiResponse withdraw(
@@ -47,7 +48,7 @@ public class TransactionController {
     }
 
     // ==============================
-    // ✅ TRANSFER
+    // TRANSFER
     // ==============================
     @PostMapping("/transfer")
     public ApiResponse transfer(@Valid @RequestBody TransferRequest request) {
@@ -62,7 +63,7 @@ public class TransactionController {
     }
 
     // ==============================
-    // ✅ GET USER TRANSACTIONS (With Pagination)
+    // GET TRANSACTIONS
     // ==============================
     @GetMapping("/user/{userId}")
     public ApiResponse getTransactions(
@@ -71,7 +72,7 @@ public class TransactionController {
             @RequestParam(defaultValue = "10") int size
     ) {
 
-        Page<?> transactions =
+        Page<Transaction> transactions =
                 walletService.getTransactionsByUser(userId, page, size);
 
         return new ApiResponse(
